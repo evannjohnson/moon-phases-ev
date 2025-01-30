@@ -57,13 +57,33 @@ const SOUTH_EMOJI_FACE: [&str; 8] = [
     "🌛",
     "🌛",
 ];
-
+const NORTH_NERDFONT: [&str; 8] = [
+    "󰽤",
+    "󰽧",
+    "󰽡",
+    "󰽨",
+    "󰽢",
+    "󰽦",
+    "󰽣",
+    "󰽥",
+];
+const SOUTH_NERDFONT: [&str; 8] = [
+    "󰽤",
+    "󰽥",
+    "󰽣",
+    "󰽦",
+    "󰽢",
+    "󰽨",
+    "󰽡",
+    "󰽧",
+];
 
 #[derive(clap::ValueEnum, Clone, Debug)]
 enum Mode {
     Name,
     Emoji,
     Numeric,
+    Nerdfont,
 }
 impl std::fmt::Display for Mode {
     // Display the name of the enum value in lowercase
@@ -103,6 +123,10 @@ struct Cli {
     /// Instead of displaying the moon phase, show the lunar zodiac sign.
     #[arg(short, long)]
     zodiac: bool,
+
+    /// Equivalent to --mode nerdfont
+    #[arg(long)]
+    nerdfont: bool,
 
     /// Use emojis direction for the Southern hemisphere (waxing crescent is 🌘)
     #[arg(short, long)]
@@ -202,6 +226,29 @@ fn to_emoji(phase: f64,
         emoji_with_vs(emoji, vari)
 }
 
+fn to_nerdfont(phase: f64,
+               south_hemisphere: bool)
+    -> String {
+        let nf_set = if south_hemisphere {
+            SOUTH_NERDFONT
+        } else {
+            NORTH_NERDFONT
+        };
+        let nf_symbol = match phase {
+            x if x <  0.125 => nf_set[0],
+            x if x <  0.25  => nf_set[1],
+            x if x <  0.375 => nf_set[2],
+            x if x <  0.50  => nf_set[3],
+            x if x <  0.625 => nf_set[4],
+            x if x <  0.75  => nf_set[5],
+            x if x <  0.875 => nf_set[6],
+            x if x <  1.00  => nf_set[7],
+            _ => nf_set[0]
+        };
+
+        return String::from(nf_symbol)
+}
+
 fn main() {
     let cli = Cli::parse();
 
@@ -211,6 +258,8 @@ fn main() {
         Mode::Emoji
     } else if cli.name {
         Mode::Name
+    } else if cli.nerdfont {
+        Mode::Nerdfont
     } else if cli.face_emoji || cli.color_emoji || cli.text_emoji {
         // if user is setting emoji options, it implies they want emoji mode.
         Mode::Emoji
@@ -284,6 +333,24 @@ fn main() {
                 };
 				println!("{}", emoji_with_vs(emoji, emoji_variation));
             },
+            Mode::Nerdfont => {
+                let nf_symbol = match moon.zodiac_name {
+                        "Pisces"=> "󰪄",
+                        "Aries"=> "󰩾",
+                        "Taurus"=> "󰪇",
+                        "Gemini"=> "󰪁",
+                        "Cancer"=> "󰩿",
+                        "Leo"=> "󰪂",
+                        "Virgo"=> "󰪈",
+                        "Libra"=> "󰪃",
+                        "Scorpio"=> "󰪆",
+                        "Sagittarius"=> "󰪅",
+                        "Capricorn"=> "󰪀",
+                        "Aquarius"=> "󰩽",
+                        _ => "󰓎"
+                };
+				println!("{}", nf_symbol);
+            }
         };
     } else {
         match mode {
@@ -296,6 +363,11 @@ fn main() {
                                      emoji_variation);
 
                 println!("{}", emoji);
+            }
+            Mode::Nerdfont => {
+                let nf_symbol = to_nerdfont(moon.phase,
+                                            cli.south_hemisphere);
+                println!("{}", nf_symbol);
             }
         }
     }
